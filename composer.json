@@ -1,0 +1,23 @@
+{
+    "name": "wayhood/yii2-queue",
+    "description": "yii2 queue component",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension","queue"],
+    "license": "BSD-4-Clause",
+    "authors": [
+        {
+            "name": "Song Yeung",
+            "email": "netyum@163.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*",
+        "yiisoft/yii2-queue": "*",
+        "jeremeamia/superclosure": "~1.0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "wh\\queue\\": ""
+        }
+    }
+}
