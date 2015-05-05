@@ -68,7 +68,7 @@ abstract class Queue extends Component
             'job'  => $job,
             'data' => $data
         ];
-        $payload = $this->setMeta(json_encode($payload), 'id', $this->getRandomId());
+        $payload = $this->setMeta($payload, 'id', $this->getRandomId());
         return $payload;
     }
 
@@ -96,7 +96,6 @@ abstract class Queue extends Component
      */
     protected function setMeta($payload, $key, $value)
     {
-        $payload = json_decode($payload, true);
         $payload[$key] = $value;
         return json_encode($payload);
     }
