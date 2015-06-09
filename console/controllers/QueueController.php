@@ -35,7 +35,7 @@ class QueueController extends \yii\console\Controller
     public function actionListen($queueObjectName = 'queue', $queueName = '')
     {
         while(true) {
-            $this->process($queueObjectName = 'queue', $queueName = '');
+            $this->process($queueObjectName, $queueName = '');
         }
     }
 
