@@ -1,11 +1,12 @@
 Queue component for Yii2
 ====================
-This component providers simple queue warpper
+This component provides simple queue wrapper
 
 Requirements
 ------------
 
-redis
+[Redis](http://redis.io)
+[yii2-redis](https://github.com/yiisoft/yii2-redis)
 
 Installation
 ------------
@@ -50,7 +51,7 @@ return [
 
 
 
-The first create a Job process Class
+First create a Job process class
 
 ```php
 namespace console\jobs;
@@ -65,34 +66,47 @@ class MyJob
 } 
 ```
 
-than set data to queue
+and than just push job to queue
 
-```
-#Default is run "run" method
+```php
+// Push job to the default queue and execute "run" method
 Yii::$app->queue->push('\console\jobs\MyJob', ['a', 'b', 'c']);
 
-#or other method name
-Yii::$app->queue->push('\console\jobs\MyJob@run', ['a', 'b', 'c']);
+// or push it and execute any other method
+Yii::$app->queue->push('\console\jobs\MyJob@myMethod', ['a', 'b', 'c']);
+
+// or push it to some specific queue
+Yii::$app->queue->push('\console\jobs\MyJob', ['a', 'b', 'c'], 'myQueue');
+
+// or both
+Yii::$app->queue->push('\console\jobs\MyJob@myMethod', ['a', 'b', 'c'], 'myQueue');
 
 ```  
 
-Command woker and listen
+Map console controller in your app config
 
 ```php
 return [
-    // ...
+    ...
     'controllerMap' => [
         'queue' => 'wh\queue\console\controllers\QueueController'
     ],
+    ...
 ];
 ```
 
-Below are some command usages of this command:
+Examples of using queue controller:
 
 ```
-#process a job and run, than exit process
-yii queue/work 
+# Process a job from default queue and than exit the process
+./yii queue/work
 
-#a loop process job
-yii queue/listen
+# continuously process jobs from default queue
+./yii queue/listen
+
+# process a job from specific queue and than exit the process
+./yii queue/work myQueue
+
+# continuously process jobs from specific queue
+./yii queue/listen myQueue
 ```
