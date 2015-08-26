@@ -13,6 +13,10 @@ use yii\console\Controller;
  */
 class QueueController extends Controller
 {
+
+    private $timeout;
+    private $sleep=5;
+
     /**
      * Process a job
      *
@@ -35,7 +39,15 @@ class QueueController extends Controller
     public function actionListen($queueName = null, $queueObjectName = 'queue')
     {
         while (true) {
-            $this->process($queueName, $queueObjectName);
+            if ($this->timeout !==null) {
+                if ($this->timeout<time()) {
+                    return true;
+                }
+            }
+            if (!$this->process($queueName, $queueObjectName)) {
+                sleep($this->sleep);
+            }
+
         }
     }
 
@@ -46,9 +58,26 @@ class QueueController extends Controller
         if ($job) {
             try {
                 $job->run();
+                return true;
             } catch (\Exception $e) {
                 Yii::error($e->getMessage(), __METHOD__);
             }
         }
+        return false;
     }
-} 
+
+    public function beforeAction($action)
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        if (getenv('QUEUE_TIMEOUT')) {
+            $this->timeout=(int)getenv('QUEUE_TIMEOUT')+time();
+        }
+        if (getenv('QUEUE_SLEEP')) {
+            $this->sleep=(int)getenv('QUEUE_SLEEP');
+        }
+        return true;
+    }
+}
