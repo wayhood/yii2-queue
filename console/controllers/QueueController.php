@@ -1,14 +1,9 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yiistudio
- * Date: 11/30/14
- * Time: 8:46 PM
- */
 
 namespace wh\queue\console\controllers;
 
 use Yii;
+use yii\console\Controller;
 
 /**
  * Queue Process Command
@@ -16,51 +11,73 @@ use Yii;
  * Class QueueController
  * @package wh\queue\console\controllers
  */
-class QueueController extends \yii\console\Controller
+class QueueController extends Controller
 {
 
+    private $timeout;
+    private $sleep=5;
 
     /**
-     * process a job
+     * Process a job
      *
-     * @param string $queueObjectName
      * @param string $queueName
+     * @param string $queueObjectName
      * @throws \Exception
      */
-    public function actionWork($queueObjectName = 'queue', $queueName = '')
+    public function actionWork($queueName = null, $queueObjectName = 'queue')
     {
-        $this->process($queueObjectName, $queueName);
+        $this->process($queueName, $queueObjectName);
     }
 
-    public function actionListen($queueObjectName = 'queue', $queueName = '')
+    /**
+     * Continuously process jobs
+     *
+     * @param string $queueName
+     * @param string $queueObjectName
+     * @throws \Exception
+     */
+    public function actionListen($queueName = null, $queueObjectName = 'queue')
     {
-        while(true) {
-            $this->process($queueObjectName, $queueName = '');
+        while (true) {
+            if ($this->timeout !==null) {
+                if ($this->timeout<time()) {
+                    return true;
+                }
+            }
+            if (!$this->process($queueName, $queueObjectName)) {
+                sleep($this->sleep);
+            }
+
         }
     }
 
-    protected function process($queueObjectName = 'queue', $queueName = '')
+    protected function process($queueName, $queueObjectName)
     {
-        $queue = Yii::$app->{$queueObjectName};
+        $job = Yii::$app->{$queueObjectName}->pop($queueName);
 
-        $queueName = $queueName == '' ? null : $queueName;
-
-        $job = $queue->pop($queueName);
-
-        if (!is_null($job)) {
+        if ($job) {
             try {
                 $job->run();
-
-                //删除失败的 TODO
-                /*
-                if ($job->autoDelete()) {
-
-                }*/
+                return true;
             } catch (\Exception $e) {
-                //
-                throw $e;
+                Yii::error($e->getMessage(), __METHOD__);
             }
         }
+        return false;
     }
 
-} 
+    public function beforeAction($action)
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        if (getenv('QUEUE_TIMEOUT')) {
+            $this->timeout=(int)getenv('QUEUE_TIMEOUT')+time();
+        }
+        if (getenv('QUEUE_SLEEP')) {
+            $this->sleep=(int)getenv('QUEUE_SLEEP');
+        }
+        return true;
+    }
+}

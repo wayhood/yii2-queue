@@ -2,47 +2,50 @@
 
 namespace wh\queue;
 
+use Yii;
 use yii\base\Component;
-use Jeremeamia\SuperClosure\SerializableClosure;
-use yii\helpers\StringHelper;
 
 abstract class Queue extends Component
 {
     /**
-     * @var string 队名前缀
+     * @var string Queue prefix
      */
-    public $queuePrefix;
+    public $queuePrefix = 'queue';
 
     /**
-     * @param $key
+     * Builds queue prefix
+     *
+     * @param string|null $name Queue name
      * @return string
      */
-    public function buildPrefix($name)
+    public function buildPrefix($name = null)
     {
-        if (is_string($name)) {
-            $name = ctype_alnum($name) && StringHelper::byteLength($name) <= 32 ? $name : md5($name);
-        } else {
-            $name = md5(json_encode($name));
+        if (empty($name)) {
+            $name = 'default';
+        } elseif ($name && preg_match('/[^[:alnum:]]/', $name)) {
+            $name = md5($name);
         }
 
-        return $this->queuePrefix . $name;
+        return $this->queuePrefix . ':' . $name;
     }
 
     /**
-     * 入队列
-     * @param $job 执行任务的类或回调
-     * @param string $data 数据
-     * @param null $queue 队列名
-     * @return mixed
+     * Push job to the queue
+     *
+     * @param string $job Fully qualified class name of the job
+     * @param mixed $data Data for the job
+     * @param string|null $queue Queue name
+     * @return string ID of the job
      */
-    public function push($job, $data = '', $queue = null)
+    public function push($job, $data = null, $queue = null)
     {
         return $this->pushInternal($this->createPayload($job, $data), $queue);
     }
 
     /**
-     * 出队列
-     * @param null $queue
+     * Get job from the queue
+     *
+     * @param string|null $queue Queue name
      * @return mixed
      */
     public function pop($queue = null)
@@ -51,40 +54,22 @@ abstract class Queue extends Component
     }
 
     /**
-     * 创建消息体
-     * @param $job
-     * @param string $data
-     * @param null $queue
-     * @return string
+     * Create job array
+     *
+     * @param string $job Fully qualified class name of the job
+     * @param mixed $data Data for the job
+     * @return array
      */
-    protected function createPayload($job, $data = '', $queue = null)
+    protected function createPayload($job, $data)
     {
-        /*if ($job instanceof Closure)
-        {
-            return json_encode($this->createClosurePayload($job, $data));
-        }*/
-
         $payload = [
             'job'  => $job,
             'data' => $data
         ];
         $payload = $this->setMeta($payload, 'id', $this->getRandomId());
+
         return $payload;
     }
-
-    /**
-     * Create a payload string for the given Closure job.
-     *
-     * @param  \Closure  $job
-     * @param  mixed     $data
-     * @return string
-     */
-    /*protected function createClosurePayload($job, $data)
-    {
-        $closure = $this->crypt->encrypt(serialize(new SerializableClosure($job)));
-
-        return array('job' => 'IlluminateQueueClosure', 'data' => compact('closure'));
-    }*/
 
     /**
      * Set additional meta on a payload string.
@@ -97,46 +82,48 @@ abstract class Queue extends Component
     protected function setMeta($payload, $key, $value)
     {
         $payload[$key] = $value;
+
         return json_encode($payload);
     }
 
     /**
-     * Get a random ID string.
+     * Get random ID.
      *
      * @return string
      */
     protected function getRandomId()
     {
-        $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        return substr(str_shuffle(str_repeat($pool, 5)), 0, 32);
+        return Yii::$app->security->generateRandomString();
     }
 
     /**
-     * 获取队列名
-     * @param $queue
+     * Get prefixed queue name
+     *
+     * @param $queue Queue name
      * @return string
      */
     protected function getQueue($queue)
     {
-        return $this->buildPrefix($queue) . $this->getQueueInternal($queue);
+        return $this->buildPrefix($queue);
     }
 
     /**
-     * 入队列内部实现
-     * @param $payload
-     * @param null $queue
+     * Class-specific realisation of adding the job to the queue
+     *
+     * @param array $payload Job data
+     * @param string|null $queue Queue name
      * @param array $options
+     *
      * @return mixed
      */
     abstract protected function pushInternal($payload, $queue = null, array $options = []);
 
     /**
-     * 获得队列名内部实现
-     * @param $queue
+     * Class-specific realisation of getting the job to the queue
+     *
+     * @param string|null $queue Queue name
+     *
      * @return mixed
      */
-    abstract protected function getQueueInternal($queue = null);
-
     abstract protected function popInternal($queue = null);
-
 }

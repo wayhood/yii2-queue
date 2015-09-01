@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: yiistudio
- * Date: 11/30/14
- * Time: 10:23 PM
- */
 
 namespace wh\queue;
 
@@ -18,13 +12,6 @@ class Job
 
     protected $queueName;
 
-    /**
-     * 一个Job实例
-     *
-     * @param $queueObject
-     * @param $payload
-     * @param $queueName
-     */
     public function __construct($queueObject, $payload, $queueName)
     {
         $this->queueObject = $queueObject;
