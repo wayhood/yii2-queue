@@ -2,6 +2,8 @@ Queue component for Yii2
 ====================
 This component provides simple queue wrapper
 
+I recommend  [yii2-asynctask](https://github.com/wayhood/yii2-asynctask).
+
 Requirements
 ------------
 
