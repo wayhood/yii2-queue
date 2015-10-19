@@ -77,18 +77,17 @@ class SqlQueue extends Queue
 
     protected function pushInternal($payload, $queue = null, $options = [])
     {
-
-        if (isset($options['queue_at']) && ($options['queue_at'] instanceof \DateTime)) {
-            $queue_at=$options['queue_at'];
+        if (isset($options['run_at']) && ($options['run_at'] instanceof \DateTime)) {
+            $run_at=$options['run_at'];
         } else {
-            $queue_at=new \DateTime;
+            $run_at=new \DateTime;
         }
 
         $this->connection->schema->insert($this->getTableName(), [
             'queue' => $this->getQueue($queue),
             'payload' => $payload,
             'run_at' => new Expression('FROM_UNIXTIME(:unixtime)', [
-                ':unixtime' => $queue_at->format('U')
+                ':unixtime' => $run_at->format('U')
             ])
         ]);
 
@@ -114,8 +113,9 @@ class SqlQueue extends Queue
         $this->_query->select('id, payload')
                      ->from($this->getTableName())
                      ->where(array('queue'=>$queue))
-                     ->andWhere('run_at <= :now', [':now' => new Expression('NOW()')])
+                     ->andWhere('run_at <= NOW()')
                      ->limit(1);
+
         return $this->_query;
     }
     private function deleteQueue($id)
