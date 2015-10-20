@@ -60,7 +60,7 @@ class SqlQueue extends Queue
         $this->connection->createCommand()->createTable($this->getTableName(), [
             'id' => 'pk COMMENT "1.0.0"',
             'queue' => 'string(255)',
-            'run_at' => 'timestamp default now() not null',
+            'run_at' => 'timestamp default CURRENT_TIMESTAMP NOT NULL',
             'payload' => 'text',
         ])->execute();
     }
