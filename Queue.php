@@ -12,6 +12,9 @@ abstract class Queue extends Component
      */
     public $queuePrefix = 'queue';
 
+    /** @var bool Debug mode */
+    public $debug = false;
+
     /**
      * Builds queue prefix
      *
