@@ -53,13 +53,18 @@ class QueueController extends Controller
 
     protected function process($queueName, $queueObjectName)
     {
-        $job = Yii::$app->{$queueObjectName}->pop($queueName);
+        $queue = Yii::$app->{$queueObjectName};
+        $job = $queue->pop($queueName);
 
         if ($job) {
             try {
                 $job->run();
                 return true;
             } catch (\Exception $e) {
+                if ($queue->debug) {
+                    var_dump($e);
+                }
+
                 Yii::error($e->getMessage(), __METHOD__);
             }
         }

@@ -12,6 +12,9 @@ abstract class Queue extends Component
      */
     public $queuePrefix = 'queue';
 
+    /** @var bool Debug mode */
+    public $debug = false;
+
     /**
      * Builds queue prefix
      *
@@ -37,9 +40,9 @@ abstract class Queue extends Component
      * @param string|null $queue Queue name
      * @return string ID of the job
      */
-    public function push($job, $data = null, $queue = null)
+    public function push($job, $data = null, $queue = null, $options = [])
     {
-        return $this->pushInternal($this->createPayload($job, $data), $queue);
+        return $this->pushInternal($this->createPayload($job, $data), $queue, $options);
     }
 
     /**
@@ -116,7 +119,7 @@ abstract class Queue extends Component
      *
      * @return mixed
      */
-    abstract protected function pushInternal($payload, $queue = null, array $options = []);
+    abstract protected function pushInternal($payload, $queue = null, $options = []);
 
     /**
      * Class-specific realisation of getting the job to the queue

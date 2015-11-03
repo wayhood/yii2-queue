@@ -4,6 +4,7 @@ namespace wh\queue;
 
 use yii\db\Connection;
 use yii\db\Query;
+use yii\db\Expression;
 use Yii;
 
 class SqlQueue extends Queue
@@ -43,16 +44,30 @@ class SqlQueue extends Queue
 
     private function hasTable()
     {
-        return $this->connection->schema->getTableSchema($this->getTableName(), true)!==null;
+        $schema=$this->connection->schema->getTableSchema($this->getTableName(), true);
+        if ($schema==null) {
+            return false;
+        }
+        if ($schema->columns['id']->comment!=='1.0.0') {
+            $this->dropTable();
+            return false;
+        }
+        return true;
     }
 
     private function createTable()
     {
         $this->connection->createCommand()->createTable($this->getTableName(), [
-            'id' => 'pk',
-            'queue'=>'string(255)',
+            'id' => 'pk COMMENT "1.0.0"',
+            'queue' => 'string(255)',
+            'run_at' => 'timestamp default CURRENT_TIMESTAMP NOT NULL',
             'payload' => 'text',
         ])->execute();
+    }
+
+    public function dropTable()
+    {
+        $this->connection->createCommand()->dropTable($this->getTableName())->execute();
     }
 
     private function getTableName()
@@ -60,13 +75,20 @@ class SqlQueue extends Queue
         return $this->default.'_queue';
     }
 
-    protected function pushInternal($payload, $queue = null, array $options = [])
+    protected function pushInternal($payload, $queue = null, $options = [])
     {
+        if (isset($options['run_at']) && ($options['run_at'] instanceof \DateTime)) {
+            $run_at=$options['run_at'];
+        } else {
+            $run_at=new \DateTime;
+        }
 
-        
         $this->connection->schema->insert($this->getTableName(), [
-            'queue'=>$this->getQueue($queue),
-            'payload'=>$payload
+            'queue' => $this->getQueue($queue),
+            'payload' => $payload,
+            'run_at' => new Expression('FROM_UNIXTIME(:unixtime)', [
+                ':unixtime' => $run_at->format('U')
+            ])
         ]);
 
         $payload = json_decode($payload, true);
@@ -91,7 +113,9 @@ class SqlQueue extends Queue
         $this->_query->select('id, payload')
                      ->from($this->getTableName())
                      ->where(array('queue'=>$queue))
+                     ->andWhere('run_at <= NOW()')
                      ->limit(1);
+
         return $this->_query;
     }
     private function deleteQueue($id)
