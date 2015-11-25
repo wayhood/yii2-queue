@@ -26,7 +26,7 @@ class RedisQueue extends Queue
         }
     }
 
-    protected function pushInternal($payload, $queue = null, array $options = [])
+    protected function pushInternal($payload, $queue = null, $options = [])
     {
         $this->redis->rpush($this->getQueue($queue), $payload);
         $payload = json_decode($payload, true);
