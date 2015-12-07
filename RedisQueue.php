@@ -3,6 +3,7 @@
 namespace wh\queue;
 
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\redis\Connection;
 
 class RedisQueue extends Queue
@@ -20,13 +21,17 @@ class RedisQueue extends Queue
     public function init()
     {
         parent::init();
-        $this->redis = Yii::$app->get($this->redis);
+        if (is_string($this->redis)) {
+            $this->redis = Yii::$app->get($this->redis);
+        } elseif (is_array($this->redis)) {
+            $this->redis = Yii::createObject($this->redis);
+        }
         if (!$this->redis instanceof Connection) {
             throw new InvalidConfigException("Queue::redis must be either a Redis connection instance or the application component ID of a Redis connection.");
         }
     }
 
-    protected function pushInternal($payload, $queue = null, array $options = [])
+    protected function pushInternal($payload, $queue = null, $options = [])
     {
         $this->redis->rpush($this->getQueue($queue), $payload);
         $payload = json_decode($payload, true);
