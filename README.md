@@ -41,11 +41,12 @@ return [
     'components' => [
         'queue' => [
             'class' => 'wh\queue\RedisQueue',
-            'redis' => [
-                'hostname' => 'localhost',
-                'port' => 6379,
-                'database' => 0
-            ]
+        ],
+        'redis' => [
+            'class' => 'yii\redis\Connection',
+            'hostname' => 'localhost',
+            'port' => 6379,
+            'database' => 0
         ],
     ],
 ];
