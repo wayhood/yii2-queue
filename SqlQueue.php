@@ -63,6 +63,7 @@ class SqlQueue extends Queue
             'run_at' => 'timestamp default CURRENT_TIMESTAMP NOT NULL',
             'payload' => 'text',
         ])->execute();
+        $this->connection->schema->refresh();
     }
 
     public function dropTable()
